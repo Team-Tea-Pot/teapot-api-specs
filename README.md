@@ -1,24 +1,19 @@
 # TeaPot API Specifications & SDKs
 
 This repository contains the OpenAPI specifications for TeaPot microservices and the autonomous SDK generation pipeline.
-
-## 📂 Structure
-
-```
-teapot-api-specs/
-├── user-service/               # Service definition
-│   ├── openapi.yaml            # API Specification
-│   └── generators/             # Generator configurations
-│       ├── dart-config.json
-│       ├── typescript-config.json
-│       ├── java-config.json
-│       └── go-config.json
-├── sdks/                       # Generated SDKs (ignored in git)
-├── scripts/                    # Automation scripts
-└── Makefile                    # Command shortcuts
+|-- user-service/               # Service definition
+|   |-- openapi.yaml            # API specification
+|   `-- generators/             # Generator configurations
+|       |-- dart-config.json
+|       |-- typescript-config.json
+|       |-- java-config.json
+|       `-- go-config.json
+|-- sdks/                       # Generated SDKs (ignored in git)
+|-- scripts/                    # Automation scripts
+`-- Makefile                    # Command shortcuts
 ```
 
-## 🚀 Autonomous SDK Generation
+## Autonomous SDK Generation
 
 We support automatic generation of SDKs for:
 - **Dart** (Flutter)
@@ -48,7 +43,7 @@ This command will:
   - Dart SDK
   - Go
 
-## 🔄 CI/CD Pipeline
+## CI/CD Pipeline
 
 The GitHub Actions workflow (`.github/workflows/auto-generate-sdks.yml`) automatically:
 1. Triggers on changes to any `openapi.yaml`
@@ -56,7 +51,7 @@ The GitHub Actions workflow (`.github/workflows/auto-generate-sdks.yml`) automat
 3. Builds and validates them
 4. Uploads artifacts
 
-## 📝 Adding a New Service
+## Adding a New Service
 
 1. Create a new directory: `mkdir my-new-service`
 2. Add `openapi.yaml` inside it.

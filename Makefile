@@ -13,33 +13,33 @@ help: ## Display this help
 
 .PHONY: validate
 validate: ## Validate all OpenAPI specifications
-	@echo "$(BLUE)🔍 Validating OpenAPI specs...$(NC)"
+	@echo "$(BLUE)Validating OpenAPI specs...$(NC)"
 	@docker run --rm -v ${PWD}:/spec \
 		openapitools/openapi-generator-cli validate \
 		-i /spec/user-service/openapi.yaml
-	@echo "$(GREEN)✅ All specs are valid!$(NC)"
+	@echo "$(GREEN)All specs are valid.$(NC)"
 
 .PHONY: docs
 docs: ## Generate HTML documentation
-	@echo "$(BLUE)📚 Generating API documentation...$(NC)"
+	@echo "$(BLUE)Generating API documentation...$(NC)"
 	@mkdir -p docs
 	@docker run --rm -v ${PWD}:/spec \
 		openapitools/openapi-generator-cli generate \
 		-i /spec/user-service/openapi.yaml \
 		-g html2 \
 		-o /spec/docs/user-service
-	@echo "$(GREEN)✅ Docs generated: docs/user-service/index.html$(NC)"
+	@echo "$(GREEN)Docs generated: docs/user-service/index.html$(NC)"
 	@open docs/user-service/index.html 2>/dev/null || echo "Open docs/user-service/index.html in browser"
 
 .PHONY: generate-all
 generate-all: ## Generate and build SDKs for all services and languages
-	@echo "$(BLUE)🚀 Starting autonomous SDK generation...$(NC)"
+	@echo "$(BLUE)Starting autonomous SDK generation...$(NC)"
 	@chmod +x scripts/generate-all-sdks.sh
 	@./scripts/generate-all-sdks.sh
-	@echo "$(GREEN)✅ All SDKs generated and built!$(NC)"
+	@echo "$(GREEN)All SDKs generated and built.$(NC)"
 
 .PHONY: clean
 clean: ## Remove generated files
-	@echo "$(YELLOW)🧹 Cleaning generated files...$(NC)"
+	@echo "$(YELLOW)Cleaning generated files...$(NC)"
 	@rm -rf sdks/ generated/ docs/
-	@echo "$(GREEN)✅ Cleaned!$(NC)"
+	@echo "$(GREEN)Cleanup complete.$(NC)"
