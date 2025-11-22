@@ -1,0 +1,7 @@
+{
+  "npmName": "@teapot/user-service-client",
+  "npmVersion": "1.0.0",
+  "supportsES6": true,
+  "withInterfaces": true,
+  "useSingleRequestParameter": false
+}

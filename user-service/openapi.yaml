@@ -1,0 +1,594 @@
+openapi: 3.0.3
+info:
+  title: TeaPot User Service API
+  version: 1.0.0
+  description: |
+    User management microservice for TeaPot SaaS platform.
+    Handles supplier user accounts, profiles, authentication, and multi-tenant access.
+    
+    ## Features
+    - Multi-tenant architecture with tenant isolation
+    - Supplier business profile management
+    - Email and phone validation
+    - Soft delete support
+    - Farm size and location tracking
+    
+    ## Authentication
+    All endpoints require JWT Bearer token in Authorization header:
+    ```
+    Authorization: Bearer <jwt_token>
+    ```
+    
+  contact:
+    name: TeaPot Platform Team
+    email: platform@teapot.lk
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development
+  - url: https://api-dev.teapot.lk/api/v1
+    description: Development environment
+  - url: https://api.teapot.lk/api/v1
+    description: Production environment
+
+tags:
+  - name: users
+    description: User management operations
+  - name: health
+    description: Service health checks
+
+paths:
+  /health:
+    get:
+      tags:
+        - health
+      summary: Health check endpoint
+      description: Check if the service is running and healthy
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2025-11-13T10:30:00Z"
+                  version:
+                    type: string
+                    example: "1.0.0"
+
+  /users:
+    post:
+      tags:
+        - users
+      summary: Create a new user
+      description: Register a new supplier user account with business profile
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: User already exists (email or phone conflict)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    
+    get:
+      tags:
+        - users
+      summary: List users
+      description: Get paginated list of users (admin only, filtered by tenant)
+      operationId: listUsers
+      parameters:
+        - name: tenantId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Tenant ID for filtering
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Items per page
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search by business name or owner name
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserResponse'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/{userId}:
+    get:
+      tags:
+        - users
+      summary: Get user by ID
+      description: Retrieve detailed user profile information
+      operationId: getUserById
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    
+    put:
+      tags:
+        - users
+      summary: Update user
+      description: Update user profile information
+      operationId: updateUser
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    
+    delete:
+      tags:
+        - users
+      summary: Delete user
+      description: Soft delete a user account (marks as inactive)
+      operationId: deleteUser
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      responses:
+        '204':
+          description: User deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /users/{userId}/verify:
+    post:
+      tags:
+        - users
+      summary: Verify user account
+      description: Mark user account as verified after email/phone confirmation
+      operationId: verifyUser
+      parameters:
+        - $ref: '#/components/parameters/UserIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - verificationCode
+              properties:
+                verificationCode:
+                  type: string
+                  description: 6-digit verification code
+                  pattern: '^\d{6}$'
+                  example: "123456"
+      responses:
+        '200':
+          description: User verified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Invalid verification code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  parameters:
+    UserIdParam:
+      name: userId
+      in: path
+      required: true
+      description: Unique user identifier
+      schema:
+        type: string
+        format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+
+  schemas:
+    CreateUserRequest:
+      type: object
+      required:
+        - businessName
+        - ownerName
+        - email
+        - phoneNumber
+        - tenantId
+      properties:
+        businessName:
+          type: string
+          minLength: 2
+          maxLength: 200
+          description: Name of the tea business/estate
+          example: "Ceylon Tea Estates"
+        ownerName:
+          type: string
+          minLength: 2
+          maxLength: 100
+          description: Full name of the business owner
+          example: "Jayantha Perera"
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Business email address
+          example: "jayantha@ceylontea.lk"
+        phoneNumber:
+          type: string
+          pattern: '^\+\d{1,3}\d{9,12}$'
+          description: International phone number with country code
+          example: "+94771234567"
+        tenantId:
+          type: string
+          format: uuid
+          description: Tenant/organization identifier for multi-tenancy
+          example: "tenant-550e8400-e29b-41d4-a716-446655440000"
+        farmSizeHectares:
+          type: number
+          format: float
+          minimum: 0.1
+          maximum: 10000
+          description: Size of the tea farm in hectares
+          example: 25.5
+        location:
+          type: object
+          properties:
+            latitude:
+              type: number
+              format: double
+              minimum: -90
+              maximum: 90
+              example: 6.9271
+            longitude:
+              type: number
+              format: double
+              minimum: -180
+              maximum: 180
+              example: 79.8612
+            address:
+              type: string
+              maxLength: 500
+              example: "Nuwara Eliya, Central Province, Sri Lanka"
+        preferredLanguage:
+          type: string
+          enum: [en, si, ta]
+          default: en
+          description: User's preferred language (en=English, si=Sinhala, ta=Tamil)
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        businessName:
+          type: string
+          minLength: 2
+          maxLength: 200
+          example: "Ceylon Premium Tea Estates"
+        ownerName:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: "Jayantha Perera"
+        phoneNumber:
+          type: string
+          pattern: '^\+\d{1,3}\d{9,12}$'
+          example: "+94771234567"
+        farmSizeHectares:
+          type: number
+          format: float
+          minimum: 0.1
+          maximum: 10000
+          example: 30.0
+        location:
+          type: object
+          properties:
+            latitude:
+              type: number
+              format: double
+              minimum: -90
+              maximum: 90
+            longitude:
+              type: number
+              format: double
+              minimum: -180
+              maximum: 180
+            address:
+              type: string
+              maxLength: 500
+        preferredLanguage:
+          type: string
+          enum: [en, si, ta]
+
+    UserResponse:
+      type: object
+      required:
+        - id
+        - businessName
+        - ownerName
+        - email
+        - phoneNumber
+        - tenantId
+        - isActive
+        - isVerified
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        businessName:
+          type: string
+          example: "Ceylon Tea Estates"
+        ownerName:
+          type: string
+          example: "Jayantha Perera"
+        email:
+          type: string
+          format: email
+          example: "jayantha@ceylontea.lk"
+        phoneNumber:
+          type: string
+          example: "+94771234567"
+        tenantId:
+          type: string
+          format: uuid
+          example: "tenant-550e8400-e29b-41d4-a716-446655440000"
+        farmSizeHectares:
+          type: number
+          format: float
+          example: 25.5
+          nullable: true
+        location:
+          type: object
+          nullable: true
+          properties:
+            latitude:
+              type: number
+              format: double
+              example: 6.9271
+            longitude:
+              type: number
+              format: double
+              example: 79.8612
+            address:
+              type: string
+              example: "Nuwara Eliya, Central Province, Sri Lanka"
+        preferredLanguage:
+          type: string
+          enum: [en, si, ta]
+          example: "en"
+        isActive:
+          type: boolean
+          description: Whether the account is active (not deleted)
+          example: true
+        isVerified:
+          type: boolean
+          description: Whether email/phone has been verified
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+          example: "2025-11-13T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2025-11-13T10:30:00Z"
+
+    PaginationResponse:
+      type: object
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          example: 1
+        limit:
+          type: integer
+          minimum: 1
+          example: 20
+        total:
+          type: integer
+          minimum: 0
+          description: Total number of items
+          example: 150
+        totalPages:
+          type: integer
+          minimum: 0
+          description: Total number of pages
+          example: 8
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+        - timestamp
+      properties:
+        error:
+          type: string
+          description: Error code or type
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Invalid email format"
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: "email"
+              message:
+                type: string
+                example: "Must be a valid email address"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-11-13T10:30:00Z"
+        path:
+          type: string
+          description: Request path that caused the error
+          example: "/api/v1/users"
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters or body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "VALIDATION_ERROR"
+            message: "Invalid request parameters"
+            details:
+              - field: "email"
+                message: "Must be a valid email address"
+            timestamp: "2025-11-13T10:30:00Z"
+            path: "/api/v1/users"
+
+    Unauthorized:
+      description: Authentication required or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "UNAUTHORIZED"
+            message: "Invalid or expired authentication token"
+            timestamp: "2025-11-13T10:30:00Z"
+            path: "/api/v1/users"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "NOT_FOUND"
+            message: "User not found"
+            timestamp: "2025-11-13T10:30:00Z"
+            path: "/api/v1/users/550e8400-e29b-41d4-a716-446655440000"
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "INTERNAL_ERROR"
+            message: "An unexpected error occurred"
+            timestamp: "2025-11-13T10:30:00Z"
+            path: "/api/v1/users"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT authentication token
+
+security:
+  - BearerAuth: []

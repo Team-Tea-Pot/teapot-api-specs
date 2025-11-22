@@ -1,0 +1,9 @@
+{
+  "groupId": "lk.teapot",
+  "artifactId": "user-service-client",
+  "artifactVersion": "1.0.0",
+  "library": "resttemplate",
+  "dateLibrary": "java8",
+  "java8": true,
+  "hideGenerationTimestamp": true
+}

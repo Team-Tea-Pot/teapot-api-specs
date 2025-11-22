@@ -1,0 +1,10 @@
+{
+  "pubName": "teapot_user_service",
+  "pubAuthor": "TeaPot Platform Team",
+  "pubAuthorEmail": "platform@teapot.lk",
+  "pubDescription": "Dart client for TeaPot User Service API",
+  "pubHomepage": "https://github.com/Team-Tea-Pot/teapot-api-specs",
+  "sourceFolder": "lib",
+  "browserClient": false,
+  "nullableFields": true
+}

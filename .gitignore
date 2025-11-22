@@ -1,0 +1,17 @@
+# Generated files
+generated/
+docs/
+sdks/
+
+# Temporary files
+*.tmp
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.iml

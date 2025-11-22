@@ -1,0 +1,6 @@
+{
+  "packageName": "userservice",
+  "packageVersion": "1.0.0",
+  "goImportAlias": "userservice",
+  "hideGenerationTimestamp": true
+}
