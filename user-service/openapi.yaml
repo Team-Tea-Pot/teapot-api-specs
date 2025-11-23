@@ -67,6 +67,40 @@ paths:
                     type: string
                     example: "1.0.0"
 
+  /users/register:
+    post:
+      tags:
+        - users
+      summary: Register a user account
+      description: |
+        Public registration entry point that validates credentials before provisioning a supplier account.
+        This endpoint does not require authentication but still enforces rate limiting and server-side validation.
+      operationId: registerUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUserRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Username, email, or phone already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
   /users:
     post:
       tags:
@@ -278,6 +312,49 @@ components:
       example: "550e8400-e29b-41d4-a716-446655440000"
 
   schemas:
+    RegisterUserRequest:
+      type: object
+      required:
+        - username
+        - password
+        - confirmPassword
+        - email
+        - tp
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          pattern: '^[a-zA-Z0-9._-]{3,50}$'
+          description: Unique handle used for login; letters, digits, dot, underscore, and dash only
+          example: "lakeview.estates"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 72
+          pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-={}\\[\\]|:;\"'<>,.?/]).{8,72}$"
+          description: Must include upper and lower case letters, a digit, and a special character
+          example: "Str0ng!Pass"
+        confirmPassword:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 72
+          description: Must match the password field; server rejects mismatched values
+          example: "Str0ng!Pass"
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Contact email for verification
+          example: "signup@lakeview.lk"
+        tp:
+          type: string
+          pattern: "^\\+?\\d{9,14}$"
+          description: Telephone number used for SMS verification; accepts optional leading + and 9-14 digits
+          example: "+94771234567"
+
     CreateUserRequest:
       type: object
       required:
