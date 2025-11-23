@@ -35,6 +35,8 @@ servers:
     description: Production environment
 
 tags:
+  - name: auth
+    description: Authentication operations
   - name: users
     description: User management operations
   - name: health
@@ -67,6 +69,74 @@ paths:
                     type: string
                     example: "1.0.0"
 
+  /auth/login:
+    post:
+      tags:
+        - auth
+      summary: User login
+      description: Authenticate user with email and password
+      operationId: loginUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/register:
+    post:
+      tags:
+        - auth
+      summary: Register new user
+      description: Register a new supplier user account with credentials
+      operationId: registerUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: User already exists (email or phone conflict)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /users/register:
     post:
       tags:
@@ -75,7 +145,7 @@ paths:
       description: |
         Public registration entry point that validates credentials before provisioning a supplier account.
         This endpoint does not require authentication but still enforces rate limiting and server-side validation.
-      operationId: registerUser
+      operationId: registerUserAccount
       security: []
       requestBody:
         required: true
@@ -312,6 +382,124 @@ components:
       example: "550e8400-e29b-41d4-a716-446655440000"
 
   schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "supplier@teapot.lk"
+        password:
+          type: string
+          format: password
+          description: User's password
+          example: "Str0ng!Pass"
+
+    LoginResponse:
+      type: object
+      required:
+        - token
+        - user
+      properties:
+        token:
+          type: string
+          description: JWT access token
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        user:
+          type: object
+          required:
+            - id
+            - email
+            - username
+          properties:
+            id:
+              type: string
+              format: uuid
+              example: "550e8400-e29b-41d4-a716-446655440000"
+            email:
+              type: string
+              format: email
+              example: "supplier@teapot.lk"
+            username:
+              type: string
+              example: "lakeview.estates"
+
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - confirmPassword
+        - username
+        - tp
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Contact email for verification
+          example: "supplier@teapot.lk"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 72
+          pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-={}\\[\\]|:;\"'<>,.?/]).{8,72}$"
+          description: Must include upper and lower case letters, a digit, and a special character
+          example: "Str0ng!Pass"
+        confirmPassword:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 72
+          description: Must match the password field
+          example: "Str0ng!Pass"
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          pattern: '^[a-zA-Z0-9._-]{3,50}$'
+          description: Unique handle used for login
+          example: "lakeview.estates"
+        tp:
+          type: string
+          pattern: '^(\\+94|0)?[0-9]{9,10}$'
+          description: Sri Lankan phone number
+          example: "+94771234567"
+
+    RegisterResponse:
+      type: object
+      required:
+        - token
+        - user
+      properties:
+        token:
+          type: string
+          description: JWT access token
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        user:
+          type: object
+          required:
+            - id
+            - email
+            - username
+          properties:
+            id:
+              type: string
+              format: uuid
+              example: "550e8400-e29b-41d4-a716-446655440000"
+            email:
+              type: string
+              format: email
+              example: "supplier@teapot.lk"
+            username:
+              type: string
+              example: "lakeview.estates"
+
     RegisterUserRequest:
       type: object
       required:
